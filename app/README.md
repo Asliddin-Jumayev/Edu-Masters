@@ -28,4 +28,4 @@ Loyihaning ma'lumotlar bazasi arxitekturasi quyidagi **7 ta asosiy modulga** bo'
 
 ---
 
-Tayyor bo'lishini kuting albatta 100% foiz ishlaydigan holatga ketirilgandan keyin barcha qadamlari to'liq yoziladi 
+Tayyor bo'lishini kuting, albatta 100% foiz ishlaydigan holatga ketirilgandan keyin barcha qadamlari to'liq yoziladi va ishlatish uchun topshiriladi
