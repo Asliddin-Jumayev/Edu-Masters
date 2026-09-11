@@ -3,7 +3,7 @@ from sqlalchemy import select
 from app.database.base import MyDb
 from app.models.branches import Branch
 from app.models.rooms import Room
-from app.schemas.rooms import RoomCreate, RoomResponse
+from app.schemes.rooms import RoomCreate, RoomResponse, RoomUpdate
 from app.utils.checked import check_ident
 
 router = APIRouter(tags=['Room'], prefix="/rooms")
@@ -20,18 +20,33 @@ async def create_room(room: RoomCreate, db: MyDb):
     )
     db.add(obj)
     await db.commit()
-    return {"msg": "Room created successfully"}
+    return {"Msg": "Room created successfully"}
 
 
 @router.get('/', response_model=list[RoomResponse])
-async def list_rooms(db: MyDb, is_active: bool = True):
-    result = await db.execute(select(Room))
+async def list_rooms(db: MyDb, is_active: bool | None = None):
+    query = select(Room)
 
-    if is_active:
-        result = await db.execute(select(Room).where(Room.is_active == is_active))
+    if is_active is not None:
+        query = query.where(Room.is_active == is_active)
 
+    result = await db.execute(query)
     return result.scalars().all()
 
+@router.put('/{room_id}')
+async def update_room(room_id: int, room_data: RoomUpdate, db: MyDb):
+    room = await check_ident(db, Room, room_id)
+
+    if room.branch_id != room_data.branch_id:
+        await check_ident(db, Branch, room_data.branch_id)
+
+    room.name = room_data.name
+    room.branch_id = room_data.branch_id
+    room.capacity = room_data.capacity
+
+    await db.commit()
+    await db.refresh(room)
+    return {"Msg": "Room edited successfully"}
 
 
 @router.delete('/{room_id}')
@@ -43,4 +58,4 @@ async def delete_room(room_id: int, db: MyDb):
     room.is_active = False
 
     await db.commit()
-    return {"msg": "Room soft deleted successfully"}
+    return {"Msg": "Room soft deleted successfully"}
