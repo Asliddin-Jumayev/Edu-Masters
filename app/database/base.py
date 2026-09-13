@@ -8,5 +8,4 @@ from app.database.connection import get_db
 class Base(DeclarativeBase):
     pass
 
-
 MyDb = Annotated[AsyncSession, Depends(get_db)]

@@ -20,18 +20,18 @@ async def create_room(room: RoomCreate, db: MyDb):
     )
     db.add(obj)
     await db.commit()
-    return {"Msg": "Room created successfully"}
+    return {"msg": "Room created successfully"}
 
 
 @router.get('/', response_model=list[RoomResponse])
-async def list_rooms(db: MyDb, is_active: bool | None = None):
-    query = select(Room)
+async def list_rooms(db: MyDb, is_active: bool = True):
+    result = await db.execute(select(Room))
 
-    if is_active is not None:
-        query = query.where(Room.is_active == is_active)
+    if is_active:
+        result = await db.execute(select(Room).where(Room.is_active == is_active))
 
-    result = await db.execute(query)
     return result.scalars().all()
+
 
 @router.put('/{room_id}')
 async def update_room(room_id: int, room_data: RoomUpdate, db: MyDb):
@@ -48,7 +48,6 @@ async def update_room(room_id: int, room_data: RoomUpdate, db: MyDb):
     await db.refresh(room)
     return {"Msg": "Room edited successfully"}
 
-
 @router.delete('/{room_id}')
 async def delete_room(room_id: int, db: MyDb):
 
@@ -58,4 +57,4 @@ async def delete_room(room_id: int, db: MyDb):
     room.is_active = False
 
     await db.commit()
-    return {"Msg": "Room soft deleted successfully"}
+    return {"msg": "Room soft delete"}
