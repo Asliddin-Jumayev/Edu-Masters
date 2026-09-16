@@ -4,11 +4,9 @@ from sqlalchemy import select
 from app.database.base import MyDb
 from app.models.branches import Branch
 from app.models.employees import Employees
-from app.schemes.employees import EmployeesCreate, EmployeesResponse, \
-    EmployeesUpdate
+from app.schemes.employees import EmployeesCreate, EmployeesResponse, EmployeesUpdate
 from app.utils.checked import check_ident
 from app.utils.security import get_password_hash
-
 
 router = APIRouter(tags=['Employees'], prefix="/employees")
 
