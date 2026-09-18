@@ -1,20 +1,16 @@
-import os
 from datetime import datetime, timezone, timedelta
-from fastapi import HTTPException
+from fastapi import HTTPException, Depends
+from fastapi.security import OAuth2PasswordBearer
 from passlib.context import CryptContext
 from jose import jwt, ExpiredSignatureError, JWTError
-from dotenv import load_dotenv
 from sqlalchemy import select
+from app.database.base import MyDb
 from app.models.employees import Employees
-
-
-load_dotenv()
+from app.utils.config import settings
 
 
 pwd_context = CryptContext(schemes=["argon2"])
 
-SECRET_KEY = os.getenv("SECRET_KEY")
-ALGORITHM = os.getenv("ALGORITHM")
 
 async def get_password_hash(password: str) -> str:
     return pwd_context.hash(password)
@@ -31,7 +27,7 @@ async def create_access_token(user_id: str) -> str:
         "type": "access"
     }
 
-    return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+    return jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
 
 
@@ -42,13 +38,13 @@ async def create_refresh_token(user_id: str) -> str:
         "type": "refresh"
     }
 
-    return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+    return jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
 
 
 async def create_new_access_token(token: str, db) -> str:
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
 
         if payload["type"] != "refresh":
             raise HTTPException(400, "No refresh token")
@@ -69,3 +65,23 @@ async def create_new_access_token(token: str, db) -> str:
         raise HTTPException(401, "Token is expired")
     except JWTError:
         raise HTTPException(401, "Token invalid")
+
+
+bearer = OAuth2PasswordBearer(tokenUrl="/auth/login")
+
+
+async def get_current_user(db: MyDb, token = Depends(bearer)):
+    try:
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        user_id = payload.get("user_id")
+        if user_id is None:
+            raise HTTPException(status_code=401, detail="Token ichida user_id topilmadi")
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Token yaroqsiz yoki muddati o'tgan")
+
+    result = await db.execute(select(Employees).where(Employees.id == user_id))
+    user_data = result.scalars().first()
+    if not user_data:
+        raise HTTPException(status_code=404, detail="Foydalanuvchi topilmadi")
+
+    return user_data

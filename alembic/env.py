@@ -17,6 +17,8 @@ if config.config_file_name is not None:
 from app.models.branches import Branch
 from app.models.rooms import Room
 from app.models.employees import Employees
+from app.models.employee_roles import EmployeeRole
+from app.models.roles import Role
 
 from app.database.base import Base
 # add your model's MetaData object here
