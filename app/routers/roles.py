@@ -1,4 +1,4 @@
-from fastapi import APIRouter, status, Depends
+from fastapi import APIRouter, status, Depends, HTTPException
 from sqlalchemy import select
 from app.database.base import MyDb
 from app.models.roles import Role
@@ -14,6 +14,12 @@ router = APIRouter(tags=['Roles'], prefix="/roles")
 async def create_role(role: RoleCreate, db: MyDb,
                       current_user = Depends(get_current_user)):
 
+    result = await db.execute(select(Role).where(Role.code == role.code))
+    code = result.scalars().first()
+
+    if code:
+        raise HTTPException(409, "Code already exists")
+
     obj = Role(
         **role.model_dump()
     )
@@ -24,7 +30,6 @@ async def create_role(role: RoleCreate, db: MyDb,
 
 @router.get('/', response_model=list[RoleResponse])
 async def list_roles(db: MyDb):
-
     result = await db.execute(select(Role))
     return result.scalars().all()
 
@@ -32,7 +37,14 @@ async def list_roles(db: MyDb):
 @router.put('/{role_id}')
 async def update_role(role_id: int, role: RoleUpdate, db: MyDb,
                       current_user = Depends(get_current_user)):
+
     role_result = await check_ident(db, Role, role_id)
+
+    result = await db.execute(select(Role).where(Role.code == role.code))
+    code = result.scalars().first()
+
+    if code:
+        raise HTTPException(409, "Code already exists")
 
     role_result.code = role.code
     role_result.name = role.name
@@ -42,7 +54,8 @@ async def update_role(role_id: int, role: RoleUpdate, db: MyDb,
 
 
 @router.delete('/{role_id}')
-async def delete_role(role_id: int, db: MyDb):
+async def delete_role(role_id: int, db: MyDb,
+                      current_user = Depends(get_current_user)):
 
     role = await check_ident(db, Role, role_id)
 

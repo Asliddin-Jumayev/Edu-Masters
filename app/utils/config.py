@@ -9,5 +9,6 @@ class Settings(BaseSettings):
     DB_NAME: str
     SECRET_KEY: str = Field(min_length=16)
     ALGORITHM: str
+    CORS_ORIGINS: str
 
 settings = Settings()
